@@ -1,0 +1,64 @@
+# Reusable Firefox addon publish workflow
+# Call from other repos:
+#   jobs:
+#     release-please:
+#       uses: afv22/.github/.github/workflows/release-please.yml@main
+#       with:
+#         release-type: simple
+#
+#     publish:
+#       needs: release-please
+#       if: needs.release-please.outputs.release-created == 'true'
+#       uses: afv22/.github/.github/workflows/publish-firefox-addon.yml@main
+#       with:
+#         addon-id: my-addon@example.com
+#         tag-name: ${{ needs.release-please.outputs.tag-name }}
+#       secrets:
+#         amo-api-key: ${{ secrets.AMO_API_KEY }}
+#         amo-api-secret: ${{ secrets.AMO_API_SECRET }}
+
+name: Publish Firefox Addon
+
+on:
+  workflow_call:
+    inputs:
+      addon-id:
+        description: "AMO addon ID (e.g. my-addon@example.com)"
+        required: true
+        type: string
+      tag-name:
+        description: "Git tag to checkout and publish"
+        required: true
+        type: string
+      channel:
+        description: "AMO release channel (listed or unlisted)"
+        required: false
+        type: string
+        default: unlisted
+    secrets:
+      amo-api-key:
+        description: "AMO API issuer key"
+        required: true
+      amo-api-secret:
+        description: "AMO API secret"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag-name }}
+
+      - name: Bundle extension
+        run: zip -r extension.zip manifest.json src/
+
+      - name: Publish to AMO
+        uses: browser-actions/release-firefox-addon@latest
+        with:
+          addon-id: ${{ inputs.addon-id }}
+          addon-path: extension.zip
+          channel: ${{ inputs.channel }}
+          auth-api-issuer: ${{ secrets.amo-api-key }}
+          auth-api-secret: ${{ secrets.amo-api-secret }}
