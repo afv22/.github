@@ -1,0 +1,45 @@
+# Reusable Claude Code Review workflow
+# Call from other repos:
+#   uses: afv22/.github/.github/workflows/claude-code-review.yml@main
+#   secrets:
+#     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+name: Claude Code Review
+
+on:
+  workflow_call:
+    inputs:
+      claude_args:
+        description: "Additional CLI arguments for Claude Code (e.g. --model claude-sonnet-4-20250514 --max-turns 5)"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      ANTHROPIC_API_KEY:
+        description: "Anthropic API key"
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment'
+       && github.event.issue.pull_request
+       && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: ${{ inputs.claude_args }}
