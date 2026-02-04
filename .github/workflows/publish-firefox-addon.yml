@@ -11,7 +11,6 @@
 #       if: needs.release-please.outputs.release-created == 'true'
 #       uses: afv22/.github/.github/workflows/publish-firefox-addon.yml@main
 #       with:
-#         addon-id: my-addon@example.com
 #         tag-name: ${{ needs.release-please.outputs.tag-name }}
 #         release-note: ${{ needs.release-please.outputs.body }}
 #       secrets:
@@ -23,10 +22,6 @@ name: Publish Firefox Addon
 on:
   workflow_call:
     inputs:
-      addon-id:
-        description: "AMO addon ID (e.g. my-addon@example.com)"
-        required: true
-        type: string
       tag-name:
         description: "Git tag to checkout and publish"
         required: true
@@ -56,13 +51,17 @@ jobs:
         with:
           ref: ${{ inputs.tag-name }}
 
+      - name: Get addon ID from manifest
+        id: manifest
+        run: echo "addon-id=$(jq -r '.browser_specific_settings.gecko.id' manifest.json)" >> "$GITHUB_OUTPUT"
+
       - name: Bundle extension
         run: zip -r extension.zip manifest.json src/
 
       - name: Publish to AMO
         uses: browser-actions/release-firefox-addon@latest
         with:
-          addon-id: ${{ inputs.addon-id }}
+          addon-id: ${{ steps.manifest.outputs.addon-id }}
           addon-path: extension.zip
           channel: ${{ inputs.channel }}
           release-note: ${{ inputs.release-note }}
