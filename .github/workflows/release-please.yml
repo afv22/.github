@@ -1,8 +1,9 @@
 # Reusable Release Please workflow
 # Call from other repos:
-#   uses: afv22/.github/.github/workflows/release-please.yml@main
+#   uses: afv22-projects/.github/.github/workflows/release-please.yml@main
 #   with:
 #     release-type: python
+#   secrets: inherit
 
 name: Release Please
 
@@ -13,6 +14,10 @@ on:
         description: "Release type (python, node, simple, etc.)"
         required: true
         type: string
+    secrets:
+      token:
+        description: "GitHub token with contents:write and pull-requests:write permissions. Defaults to GITHUB_TOKEN."
+        required: false
     outputs:
       release-created:
         description: "Whether a release was created"
@@ -40,3 +45,4 @@ jobs:
         id: release
         with:
           release-type: ${{ inputs.release-type }}
+          token: ${{ secrets.token || github.token }}
