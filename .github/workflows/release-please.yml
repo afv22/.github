@@ -9,6 +9,13 @@
 # .release-please-manifest.json in the calling repo), omit release-type:
 #   uses: afv22-projects/.github/.github/workflows/release-please.yml@main
 #   secrets: inherit
+#
+# For monorepos with package in a subdirectory:
+#   uses: afv22-projects/.github/.github/workflows/release-please.yml@main
+#   with:
+#     release-type: node
+#     path: client
+#   secrets: inherit
 
 name: Release Please
 
@@ -19,6 +26,11 @@ on:
         description: "Release type (python, node, simple, etc.). Omit to use manifest-based config."
         required: false
         type: string
+      path:
+        description: "Path to the package (for monorepos with package in subdirectory)"
+        required: false
+        type: string
+        default: "."
     secrets:
       token:
         description: "GitHub token with contents:write and pull-requests:write permissions. Defaults to GITHUB_TOKEN."
@@ -55,6 +67,7 @@ jobs:
         if: ${{ inputs.release-type != '' }}
         with:
           release-type: ${{ inputs.release-type }}
+          path: ${{ inputs.path }}
           token: ${{ secrets.token || github.token }}
 
       - uses: googleapis/release-please-action@v4
